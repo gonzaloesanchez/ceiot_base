@@ -27,16 +27,16 @@
 
 #include "esp_random.h"
 
-#define BASE_TEMP 	20	//20 ºC
+#define BASE_TEMP 	    20	    //20 ºC
 #define BASE_PRESSURE	101325	// 1 [bar]
-#define BASE_HUMIDITY	50	//50%
-				//
+#define BASE_HUMIDITY	50	    //50%
+
 /* HTTP constants that aren't configurable in menuconfig */
 #define WEB_PATH "/measurement"
 
 static const char *TAG = "temp_collector";
 
-static char *BODY = "id="DEVICE_ID"&t=%0.2f&h=%0.2f";
+static char *BODY = "id="DEVICE_ID"&key="DEVICE_KEY"&t=%0.2f&h=%0.2f";
 
 static char *REQUEST_POST = "POST "WEB_PATH" HTTP/1.0\r\n"
     "Host: "API_IP_PORT"\r\n"
@@ -60,51 +60,27 @@ static void http_get_task(void *pvParameters)
 
     char send_buf[256];
 
-    /*
-    bmp280_params_t params;
-    bmp280_init_default_params(&params);
-    bmp280_t dev;
-    memset(&dev, 0, sizeof(bmp280_t));
-
-    ESP_ERROR_CHECK(bmp280_init_desc(&dev, BMP280_I2C_ADDRESS_0, 0, SDA_GPIO, SCL_GPIO));
-    ESP_ERROR_CHECK(bmp280_init(&dev, &params));
-
-    bool bme280p = dev.id == BME280_CHIP_ID;
-    ESP_LOGI(TAG, "BMP280: found %s\n", bme280p ? "BME280" : "BMP280");
-    */
 
     ESP_LOGI(TAG, "This is a dummy device. Only random temp and humidity");
     
     float pressure, temperature, humidity;
 
-    while(1) {
-        temperature = (esp_random() % 100) / 10.0 + 20;		//get rand temp between 20º - 30º
-	pressure = BASE_PRESSURE - ((esp_random() % 3250) / 10.0);	//Pressure between 101325 - 101000 [Pa]
-	humidity = ((esp_random() % (1000 - BASE_HUMIDITY*10)) / 10.0) + BASE_HUMIDITY;		//Humidity between BASE_HUMIDITY and 100%
-	    
-	ESP_LOGI(TAG, "Pressure: %.2f Pa, Temperature: %.2f C, Humidity: %.2f\n", pressure, temperature, humidity);
+    while (1) {
+        temperature = (esp_random() % 100) / 10.0 + 20;                                   // get rand temp between 20º - 30º
+        pressure = BASE_PRESSURE - ((esp_random() % 3250) / 10.0);                        // Pressure between 101325 - 101000 [Pa]
+        humidity = ((esp_random() % (1000 - BASE_HUMIDITY * 10)) / 10.0) + BASE_HUMIDITY; // Humidity between BASE_HUMIDITY and 100%
 
-	//First test only temp
-	sprintf(send_buf, REQUEST_POST, temperature , 0);
+        ESP_LOGI(TAG, "Pressure: %.2f Pa, Temperature: %.2f C, Humidity: %.2f\n", pressure, temperature, humidity);
 
-	/*
-	if (bmp280_read_float(&dev, &temperature, &pressure, &humidity) != ESP_OK) {
-            ESP_LOGI(TAG, "Temperature/pressure reading failed\n");
-        } else {
-            ESP_LOGI(TAG, "Pressure: %.2f Pa, Temperature: %.2f C", pressure, temperature);
-            if (bme280p) {
-                ESP_LOGI(TAG,", Humidity: %.2f\n", humidity);
-		sprintf(body, BODY, temperature , humidity );
-                sprintf(send_buf, REQUEST_POST, (int)strlen(body),body );
-	    } else {
-                sprintf(send_buf, REQUEST_POST, temperature , 0);
-            }
-	    ESP_LOGI(TAG,"sending: \n%s\n",send_buf);
-        }    
-*/
+        // First test temp and humidity
+
+        ESP_LOGI(TAG, "sending: \n%s\n", send_buf);
+        sprintf(body, BODY, temperature, humidity);
+        sprintf(send_buf, REQUEST_POST, (int)strlen(body), body);
+
         int err = getaddrinfo(API_IP, API_PORT, &hints, &res);
 
-        if(err != 0 || res == NULL) {
+        if (err != 0 || res == NULL)  {
             ESP_LOGE(TAG, "DNS lookup failed err=%d res=%p", err, res);
             vTaskDelay(1000 / portTICK_PERIOD_MS);
             continue;
@@ -113,11 +89,13 @@ static void http_get_task(void *pvParameters)
         /* Code to print the resolved IP.
 
            Note: inet_ntoa is non-reentrant, look at ipaddr_ntoa_r for "real" code */
+
         addr = &((struct sockaddr_in *)res->ai_addr)->sin_addr;
         ESP_LOGI(TAG, "DNS lookup succeeded. IP=%s", inet_ntoa(*addr));
 
         s = socket(res->ai_family, res->ai_socktype, 0);
-        if(s < 0) {
+        if (s < 0)
+        {
             ESP_LOGE(TAG, "... Failed to allocate socket.");
             freeaddrinfo(res);
             vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -125,7 +103,8 @@ static void http_get_task(void *pvParameters)
         }
         ESP_LOGI(TAG, "... allocated socket");
 
-        if(connect(s, res->ai_addr, res->ai_addrlen) != 0) {
+        if (connect(s, res->ai_addr, res->ai_addrlen) != 0)
+        {
             ESP_LOGE(TAG, "... socket connect failed errno=%d", errno);
             close(s);
             freeaddrinfo(res);
@@ -136,7 +115,8 @@ static void http_get_task(void *pvParameters)
         ESP_LOGI(TAG, "... connected");
         freeaddrinfo(res);
 
-        if (write(s, send_buf, strlen(send_buf)) < 0) {
+        if (write(s, send_buf, strlen(send_buf)) < 0)
+        {
             ESP_LOGE(TAG, "... socket send failed");
             close(s);
             vTaskDelay(4000 / portTICK_PERIOD_MS);
@@ -148,7 +128,8 @@ static void http_get_task(void *pvParameters)
         receiving_timeout.tv_sec = 5;
         receiving_timeout.tv_usec = 0;
         if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &receiving_timeout,
-                sizeof(receiving_timeout)) < 0) {
+                       sizeof(receiving_timeout)) < 0)
+        {
             ESP_LOGE(TAG, "... failed to set socket receiving timeout");
             close(s);
             vTaskDelay(4000 / portTICK_PERIOD_MS);
@@ -157,18 +138,21 @@ static void http_get_task(void *pvParameters)
         ESP_LOGI(TAG, "... set socket receiving timeout success");
 
         /* Read HTTP response */
-        do {
+        do
+        {
             bzero(recv_buf, sizeof(recv_buf));
-            r = read(s, recv_buf, sizeof(recv_buf)-1);
-            for(int i = 0; i < r; i++) {
+            r = read(s, recv_buf, sizeof(recv_buf) - 1);
+            for (int i = 0; i < r; i++)
+            {
                 putchar(recv_buf[i]);
             }
-        } while(r > 0);
+        } while (r > 0);
 
         ESP_LOGI(TAG, "... done reading from socket. Last read return=%d errno=%d.", r, errno);
         close(s);
 
-        for(int countdown = 10; countdown >= 0; countdown--) {
+        for (int countdown = 10; countdown >= 0; countdown--)
+        {
             ESP_LOGI(TAG, "%d... ", countdown);
             vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
@@ -178,7 +162,7 @@ static void http_get_task(void *pvParameters)
 
 void app_main(void)
 {
-    ESP_ERROR_CHECK( nvs_flash_init() );
+    ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     ESP_ERROR_CHECK(i2cdev_init());

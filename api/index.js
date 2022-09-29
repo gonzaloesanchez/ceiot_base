@@ -34,18 +34,32 @@ async function getMeasurements() {
 
 const app = express();
 
-app.use(bodyParser.urlencoded({extended:false}));
-
 app.use(express.static('spa'));
 app.use('/js', express.static('spa'));
 
 const PORT = 8080;
 
+/**
+ * Only here use json bodyparser
+ */
+app.use(bodyParser.json())
 app.post('/measurement', function (req, res) {
--       console.log("device id    : " + req.body.id + " key         : " + req.body.key + " temperature : " + req.body.t + " humidity    : " + req.body.h);	
-    const {insertedId} = insertMeasurement({id:req.body.id, t:req.body.t, h:req.body.h});
+-   //console.log("device id    : " + req.body.id + " key         : " + req.body.key + " temperature : " + req.body.t + " humidity    : " + req.body.h);	
+    //const {insertedId} = insertMeasurement({id:req.body.id, t:req.body.t, h:req.body.h});
+	//res.send("received measurement into " +  insertedId);
+
+    console.log(req.body);
+    var json_obj = req.body;        //already a JSON object
+
+    const {insertedId} = insertMeasurement({id:json_obj.id, t:json_obj.t, h:json_obj.h});
 	res.send("received measurement into " +  insertedId);
 });
+
+
+/**
+ * Here an afterwards use urlencoded
+ */
+app.use(bodyParser.urlencoded({extended:false}));
 
 app.post('/device', function (req, res) {
 	console.log("device id    : " + req.body.id + " name        : " + req.body.n + " key         : " + req.body.k );
@@ -186,6 +200,9 @@ startDatabase().then(async() => {
     db.public.none("CREATE TABLE devices (device_id VARCHAR, name VARCHAR, key VARCHAR)");
     db.public.none("INSERT INTO devices VALUES ('00', 'Fake Device 00', '123456')");
     db.public.none("INSERT INTO devices VALUES ('01', 'Fake Device 01', '234567')");
+
+    db.public.none("INSERT INTO devices VALUES ('03', 'ESP32c3 Dummy', '111111')");
+    
     db.public.none("CREATE TABLE users (user_id VARCHAR, name VARCHAR, key VARCHAR)");
     db.public.none("INSERT INTO users VALUES ('1','Ana','admin123')");
     db.public.none("INSERT INTO users VALUES ('2','Beto','user123')");
