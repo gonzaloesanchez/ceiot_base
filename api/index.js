@@ -7,6 +7,7 @@ const PgMem = require("pg-mem");
 const db = PgMem.newDb();
 
 const fs = require('fs');
+const { runInNewContext } = require("vm");
 
 let database = null;
 const collectionName = "measurements";
@@ -44,9 +45,6 @@ const PORT = 8080;
  */
 app.use(bodyParser.json())
 app.post('/measurement', function (req, res) {
--   //console.log("device id    : " + req.body.id + " key         : " + req.body.key + " temperature : " + req.body.t + " humidity    : " + req.body.h);	
-    //const {insertedId} = insertMeasurement({id:req.body.id, t:req.body.t, h:req.body.h});
-	//res.send("received measurement into " +  insertedId);
 
     console.log(req.body);
     var json_obj = req.body;        //already a JSON object
@@ -66,6 +64,29 @@ app.post('/device', function (req, res) {
 
     db.public.none("INSERT INTO devices VALUES ('"+req.body.id+ "', '"+req.body.n+"', '"+req.body.k+"')");
 	res.send("received new device");
+});
+
+/**
+ * Delete am existing device
+ */
+app.delete('/device/:id', function(req,res)  {
+    console.log("Received delete request for device: " + req.params.id);
+
+    var device = db.public.many("SELECT * FROM devices WHERE device_id = '"+req.params.id+"'");
+
+    /**
+     * Una chanchada, solamente deberia haber un solo valor. Acceso a valor cero hardcodeado
+     */
+    if(device[0] != null)  {
+        res.status(202).send("Success at deleting device ID:" + device[0].device_id + " - " + device[0].name);
+
+        db.public.none("DELETE FROM devices WHERE device_id = '"+device[0].device_id+"'");
+        console.log("Dispositivo ID: " + device[0].device_id + " - "+ device[0].name + " eliminado");
+    }
+    else  {
+        console.log("No existe el dispositivo!\n");
+        res.status(204).send();
+    }
 });
 
 
