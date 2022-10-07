@@ -81,10 +81,6 @@ static void http_get_task(void *pvParameters)
             ESP_LOGE(TAG,"Could not read data from sensor\n");
         }
 
-
-        vTaskDelay(30000 / portTICK_PERIOD_MS);
-
-
         int err = getaddrinfo(API_IP, API_PORT, &hints, &res);
 
         if (err != 0 || res == NULL)  {
