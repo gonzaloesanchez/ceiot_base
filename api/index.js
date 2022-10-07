@@ -64,6 +64,9 @@ app.use(bodyParser.urlencoded({extended:false}));
 app.post('/device', function (req, res) {
 	console.log("device id    : " + req.body.id + "\nname        : " + req.body.n + "\nkey         : " + req.body.k );
     
+    /**
+     * Query para saber si existe el dispositivo antes de insertarlo en postgres
+     */
     var query_res = db.public.many("SELECT device_id FROM devices WHERE device_id ='"+req.body.id+ "'");
     console.log(query_res);
     
@@ -73,24 +76,16 @@ app.post('/device', function (req, res) {
         res.send("received new device");
     }
     else {
+        /**
+         * El dispositivo ya existe, entonces no se hace el insert
+         */
         console.log("Device already registered");
         res.send("Device already registered");
     }
-
-    
-    /*
-    if(db.public.one("SELECT device_id FROM devices WHERE device_id='"+req.body.id+ "'") == null)  {
-        
-	    res.send("received new device");
-    } 
-    else {
-        res.send("Device already registered");
-    }
-    */
 });
 
 /**
- * Delete am existing device
+ * Delete an existing device
  */
 app.delete('/device/:id', function(req,res)  {
     console.log("Received delete request for device: " + req.params.id);
