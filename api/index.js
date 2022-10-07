@@ -33,6 +33,8 @@ async function getMeasurements() {
     return await database.collection(collectionName).find({}).toArray();	
 }
 
+
+
 const app = express();
 
 app.use(express.static('spa'));
@@ -60,10 +62,31 @@ app.post('/measurement', function (req, res) {
 app.use(bodyParser.urlencoded({extended:false}));
 
 app.post('/device', function (req, res) {
-	console.log("device id    : " + req.body.id + " name        : " + req.body.n + " key         : " + req.body.k );
+	console.log("device id    : " + req.body.id + "\nname        : " + req.body.n + "\nkey         : " + req.body.k );
+    
+    var query_res = db.public.many("SELECT device_id FROM devices WHERE device_id ='"+req.body.id+ "'");
+    console.log(query_res);
+    
+    if(query_res[0] == null)  {
+        db.public.none("INSERT INTO devices VALUES ('"+req.body.id+ "', '"+req.body.n+"', '"+req.body.k+"')");
+        console.log("received new device");
+        res.send("received new device");
+    }
+    else {
+        console.log("Device already registered");
+        res.send("Device already registered");
+    }
 
-    db.public.none("INSERT INTO devices VALUES ('"+req.body.id+ "', '"+req.body.n+"', '"+req.body.k+"')");
-	res.send("received new device");
+    
+    /*
+    if(db.public.one("SELECT device_id FROM devices WHERE device_id='"+req.body.id+ "'") == null)  {
+        
+	    res.send("received new device");
+    } 
+    else {
+        res.send("Device already registered");
+    }
+    */
 });
 
 /**
@@ -174,7 +197,8 @@ app.get('/admin/:command', function(req,res) {
        case "clear":
          if (req.query.db == "mongo") {
            msg = "clearing mongo";
-           /* UNIMPLEMENTED */
+           database.collection(collectionName).deleteMany({ });
+           //res.redirect('/measurement')
 	 } else if (req.query.db == "psql") {
            msg = "clearing psql";
            /* UNIMPLEMENTED */
@@ -221,8 +245,6 @@ startDatabase().then(async() => {
     db.public.none("CREATE TABLE devices (device_id VARCHAR, name VARCHAR, key VARCHAR)");
     db.public.none("INSERT INTO devices VALUES ('00', 'Fake Device 00', '123456')");
     db.public.none("INSERT INTO devices VALUES ('01', 'Fake Device 01', '234567')");
-
-    db.public.none("INSERT INTO devices VALUES ('03', 'ESP32c3 Dummy', '111111')");
     
     db.public.none("CREATE TABLE users (user_id VARCHAR, name VARCHAR, key VARCHAR)");
     db.public.none("INSERT INTO users VALUES ('1','Ana','admin123')");

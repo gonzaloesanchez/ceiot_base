@@ -24,7 +24,6 @@ resp = requests.get(url=url)
 data = resp.json()
 
 #data is presented as records hourly from 00hs current day up to 168 records
-
 algo = [data["hourly"]["time"][now.hour], data["hourly"]["temperature_2m"][now.hour], data["hourly"]["relativehumidity_2m"][now.hour]]
 print (algo)
 
