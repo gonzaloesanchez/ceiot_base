@@ -52,7 +52,8 @@ app.post('/measurement', function (req, res) {
     var json_obj = req.body;        //already a JSON object
 
     const {insertedId} = insertMeasurement({id:json_obj.id, t:json_obj.t, h:json_obj.h});
-	res.send("received measurement into " +  insertedId);
+
+	res.send("received measurement into " +  String(insertedId));
 });
 
 
@@ -68,7 +69,7 @@ app.post('/device', function (req, res) {
      * Query para saber si existe el dispositivo antes de insertarlo en postgres
      */
     var query_res = db.public.many("SELECT device_id FROM devices WHERE device_id ='"+req.body.id+ "'");
-    console.log(query_res);
+    //console.log(query_res);
     
     if(query_res[0] == null)  {
         db.public.none("INSERT INTO devices VALUES ('"+req.body.id+ "', '"+req.body.n+"', '"+req.body.k+"')");

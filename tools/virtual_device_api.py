@@ -3,16 +3,28 @@ import datetime
 import sys
 import ast
 
+"""
+This little scrips takes two arguments
+The first one is the http address where it has to make the request
+The second is the device id which its posting the met information
+The API has some intelligence to only register devices that are not present already
+
+usage example:
+
+python3 virtual_device_api.py localhost 01
+python3 virtual_device_api.py www.somerandomsite.com 01
+"""
+
 now = datetime.datetime.now()
 
 args = ast.literal_eval(str(sys.argv))
 cant_args = len(sys.argv)
 
-if cant_args < 2:
+if cant_args < 3:
     print("ERROR! Muy pocos argumentos")
     sys.exit()
 
-if cant_args > 2:
+if cant_args > 3:
     print("ERROR! Demasiados argumentos")
     sys.exit()
 
@@ -31,17 +43,18 @@ temp = data["hourly"]["temperature_2m"][now.hour]
 hum = data["hourly"]["relativehumidity_2m"][now.hour]
 
 # Register new device
-url_dev = "http://localhost:8080/device"
+
+url_dev = "http://" + args[1] + ":8080/device"
 myobj = {
-    "id": "v" + args[1],
-    "n": "Virtual Device " + args[1],
-    "k": "v00000"}
+    "id": "v" + args[2],
+    "n": "Virtual Device " + args[2],
+    "k": "v0000" + args[2]}
 
 x = requests.post(url_dev,data=myobj);
 print(x.text);
 
-url_meas = "http://localhost:8080/measurement"
-id_string = "v" + args[1]
+url_meas = "http://" + args[1] + ":8080/measurement"
+id_string = "v" + args[2]
 jsonObj = {
     "id": id_string,
     "t": temp,
